@@ -23,6 +23,7 @@ __pycache__/
 # ==============================
 # Others
 # ==============================
+.python-version
 .vscode/
 **/.vscode/
 .DS_Store
