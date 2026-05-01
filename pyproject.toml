@@ -5,7 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "google-search-results>=2.4.2",
     "python-dotenv>=1.2.2",
+    "serpapi>=1.0.2",
 ]
 
 [dependency-groups]
