@@ -1,4 +1,5 @@
 from src.tools.card_extractor import extract_card_name
+from src.tools.ebay_search import EbaySearch
 from src.utils.logger import setup_logger
 
 
@@ -19,6 +20,21 @@ def main():
     print(f"\nExtracted Name: {extraction['name']}")
     print(f"Condition: {extraction['condition']}")
     print(f"\nSearching for: {extraction['name']} ({extraction['condition']})")
+
+    ebay_search = EbaySearch()
+    results = ebay_search.search(extraction)
+
+    print("\n" + "=" * 40)
+    print("Search Results:")
+    print("=" * 40)
+    if results:
+        for i, result in enumerate(results, 1):
+            print(f"\n{i}. URL: {result.get('url', 'N/A')}")
+            print(f"   Price: ${result.get('price', 'N/A')}")
+            print(f"   Sold Date: {result.get('sold_date', 'N/A')}")
+    else:
+        print("No results found.")
+
 
 
 if __name__ == "__main__":
