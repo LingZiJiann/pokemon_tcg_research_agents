@@ -57,6 +57,8 @@ class EbaySearch:
         """
         return {
             "url": result.get("link"),
+            "title": result.get("title"),
             "price": result.get("price", {}).get("extracted"),
             "sold_date": result.get("sold_date"),
         }
+    

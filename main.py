@@ -30,6 +30,7 @@ def main():
     if results:
         for i, result in enumerate(results, 1):
             print(f"\n{i}. URL: {result.get('url', 'N/A')}")
+            print(f"   Title: {result.get('title', 'N/A')}")
             print(f"   Price: ${result.get('price', 'N/A')}")
             print(f"   Sold Date: {result.get('sold_date', 'N/A')}")
     else:
