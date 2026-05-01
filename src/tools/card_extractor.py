@@ -65,3 +65,4 @@ def extract_card_name(raw_input: str) -> dict:
     result = {"name": name, "condition": condition}
     logger.debug(f"Extracted card: {result}")
     return result
+
