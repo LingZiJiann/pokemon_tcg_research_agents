@@ -26,6 +26,9 @@ src/
     ebay_search.py             # SerpAPI eBay sold listings lookup
   utils/
     logger.py                  # Logging utility
+docs/
+  card_extraction.md           # Card extraction feature documentation
+  ebay_search.md               # eBay search feature documentation
 ```
 
 **Future-proofing:** When an orchestrator is needed, it slots in as `src/orchestrator.py` and treats each file in `src/agents/` as a delegatable subagent — no restructuring required.
