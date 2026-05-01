@@ -1,5 +1,9 @@
 import re
 
+from src.utils.logger import get_logger
+
+logger = get_logger("card_extraction")
+
 
 def extract_card_name(raw_input: str) -> dict:
     """Extract card name and condition from raw user input.
@@ -26,6 +30,7 @@ def extract_card_name(raw_input: str) -> dict:
     )
     if graded_match:
         condition = f"{graded_match.group(1).upper()} {graded_match.group(2)}"
+        logger.debug(f"Detected graded condition: {condition}")
 
     # Ungraded condition keywords
     ungraded_keywords = {
@@ -43,6 +48,7 @@ def extract_card_name(raw_input: str) -> dict:
         for pattern, label in ungraded_keywords.items():
             if re.search(pattern, raw_input, re.IGNORECASE):
                 condition = label
+                logger.debug(f"Detected ungraded condition: {condition}")
                 break
 
     # Strip condition from input to get the card name
@@ -56,4 +62,6 @@ def extract_card_name(raw_input: str) -> dict:
     name = " ".join(name.split())  # Collapse multiple spaces
     name = name.title()
 
-    return {"name": name, "condition": condition}
+    result = {"name": name, "condition": condition}
+    logger.debug(f"Extracted card: {result}")
+    return result
