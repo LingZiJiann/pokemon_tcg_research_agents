@@ -12,7 +12,7 @@ The eBay search feature queries recent sold auction listings on eBay via the Ser
 
 ```python
 class EbaySearch:
-    def search(self, card_data: dict) -> list[dict]: ...
+    def search(self, card_data: dict) -> pd.DataFrame: ...
     def _parse_listing(self, result: dict) -> dict: ...
     def _filter_and_rank(self, results: list[dict], condition: str, search_term: str) -> list[dict]: ...
     def _title_contains_condition(self, title: str, condition: str) -> bool: ...
@@ -21,7 +21,7 @@ class EbaySearch:
 ### `search()`
 
 ```python
-def search(self, card_data: dict) -> list[dict]:
+def search(self, card_data: dict) -> pd.DataFrame:
     """Search eBay for a card based on card extractor results."""
 ```
 
@@ -34,18 +34,14 @@ def search(self, card_data: dict) -> list[dict]:
 ```
 
 **Output:**
-```python
-[
-    {
-        "url": str,         # eBay listing URL
-        "title": str,       # Listing title as shown on eBay
-        "price": float,     # Extracted sale price (USD)
-        "sold_date": str,   # Date the listing sold
-        "score": int        # Relevance score vs search term (0–100)
-    },
-    ...
-]
-```
+A pandas DataFrame with columns:
+| Column | Type | Description |
+|--------|------|-------------|
+| `url` | str | eBay listing URL |
+| `title` | str | Listing title as shown on eBay |
+| `price` | float | Extracted sale price (USD) |
+| `sold_date` | str | Date the listing sold |
+| `score` | int | Relevance score vs search term (0–100) |
 
 Results are sorted by `score` descending — most relevant titles first.
 
@@ -82,18 +78,11 @@ results = ebay.search({"name": "Charizard 199/165 Obsidian Flames", "condition":
 # Searches eBay for: "Charizard 199/165 Obsidian Flames PSA 10"
 ```
 
-**Sample output:**
-```python
-[
-    {
-        "url": "https://www.ebay.com/itm/...",
-        "title": "Charizard 199/165 Obsidian Flames PSA 10 Pokemon Card",
-        "price": 320.00,
-        "sold_date": "Apr 28, 2026",
-        "score": 92
-    },
-    ...
-]
+**Sample output (DataFrame):**
+```
+                              url                                              title  price      sold_date  score
+0  https://www.ebay.com/itm/...  Charizard 199/165 Obsidian Flames PSA 10 Poke...  320.00  Apr 28, 2026     92
+1  https://www.ebay.com/itm/...  Charizard 199/165 Obsidian Flames PSA 10 Raw ...  245.50  Apr 27, 2026     88
 ```
 
 ### Example 2: Ungraded Card Search
@@ -111,12 +100,16 @@ The search is integrated into the main CLI flow in `main.py`:
 from src.tools.ebay_search import EbaySearch
 
 ebay_search = EbaySearch()
-results = ebay_search.search(extraction)  # extraction = output of extract_card_name()
+results_df = ebay_search.search(extraction)  # extraction = output of extract_card_name()
 
-for result in results:
-    print(result["url"])
-    print(result["price"])
-    print(result["sold_date"])
+# Access as DataFrame
+print(results_df[["url", "price", "sold_date"]])
+
+# Iterate through rows
+for _, row in results_df.iterrows():
+    print(row["url"])
+    print(row["price"])
+    print(row["sold_date"])
 ```
 
 The `extraction` dict from `extract_card_name()` is passed directly to `EbaySearch.search()` — no transformation needed.

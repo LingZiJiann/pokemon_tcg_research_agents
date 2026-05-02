@@ -38,7 +38,7 @@ docs/
 | Tool | Description |
 |---|---|
 | `extract_card_name` | Normalizes user input into a clean search string (e.g. "Charizard 199/165 Obsidian Flames") |
-| `search_ebay_last_sold` | Queries SerpAPI eBay sold listings; filters by condition match, scores titles with `rapidfuzz` for relevance, returns results sorted by score with title, price, date, and score |
+| `search_ebay_last_sold` | Queries SerpAPI eBay sold listings; filters by condition match, scores titles with `rapidfuzz` for relevance, returns results as a pandas DataFrame sorted by score with columns: url, title, price, sold_date, score |
 
 ## Setup
 
