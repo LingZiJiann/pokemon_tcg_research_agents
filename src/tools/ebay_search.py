@@ -1,4 +1,5 @@
 import os
+from difflib import SequenceMatcher
 from dotenv import load_dotenv
 import serpapi
 
@@ -12,10 +13,11 @@ class EbaySearch:
     SHOW_ONLY = "Sold"
     BUYING_FORMAT = "Auction"
 
-    def __init__(self, api_key: str | None = None):
+    def __init__(self, api_key: str | None = None, fuzzy_threshold: float = 0.4):
         self.api_key = api_key or os.getenv("SERPAPI_API_KEY")
         if not self.api_key:
             raise ValueError("SERPAPI_API_KEY not provided and not in environment")
+        self.fuzzy_threshold = fuzzy_threshold
 
     def search(self, card_data: dict) -> list[dict]:
         """Search eBay for a card based on card extractor results.
@@ -44,9 +46,13 @@ class EbaySearch:
             logger.info(f"eBay search completed for: {search_term}")
 
             parsed_results = [self._parse_listing(result) for result in results]
-            filtered_results = [r for r in parsed_results if self._title_contains_condition(r["title"], condition)]
+            filtered_results = [
+                r for r in parsed_results
+                if self._title_contains_condition(r["title"], condition)
+                and self._title_matches_card_name(r["title"], card_data["name"])
+            ]
 
-            logger.info(f"Filtered {len(parsed_results)} results to {len(filtered_results)} matching condition '{condition}'")
+            logger.info(f"Filtered {len(parsed_results)} results to {len(filtered_results)} matching condition '{condition}' and card name '{card_data['name']}'")
             return filtered_results
         except Exception as e:
             logger.error(f"eBay search failed for '{search_term}': {str(e)}")
@@ -67,6 +73,12 @@ class EbaySearch:
             "price": result.get("price", {}).get("extracted"),
             "sold_date": result.get("sold_date"),
         }
+
+    def _title_matches_card_name(self, title: str, card_name: str) -> bool:
+        if not title or not card_name:
+            return False
+        ratio = SequenceMatcher(None, card_name.lower(), title.lower()).ratio()
+        return ratio >= self.fuzzy_threshold
 
     def _title_contains_condition(self, title: str, condition: str) -> bool:
         """Check if title contains the specified card condition.
