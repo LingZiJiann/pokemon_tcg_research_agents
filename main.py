@@ -27,12 +27,8 @@ def main():
     print("\n" + "=" * 40)
     print("Search Results:")
     print("=" * 40)
-    if results:
-        for i, result in enumerate(results, 1):
-            print(f"\n{i}. URL: {result.get('url', 'N/A')}")
-            print(f"   Title: {result.get('title', 'N/A')}")
-            print(f"   Price: ${result.get('price', 'N/A')}")
-            print(f"   Sold Date: {result.get('sold_date', 'N/A')}")
+    if not results.empty:
+        print(results.to_string())
     else:
         print("No results found.")
 

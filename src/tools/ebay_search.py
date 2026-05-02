@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from rapidfuzz import fuzz
 import serpapi
+import pandas as pd
 
 from src.utils.logger import get_logger
 
@@ -19,14 +20,14 @@ class EbaySearch:
         if not self.api_key:
             raise ValueError("SERPAPI_API_KEY not provided and not in environment")
 
-    def search(self, card_data: dict) -> list[dict]:
+    def search(self, card_data: dict) -> pd.DataFrame:
         """Search eBay for a card based on card extractor results.
 
         Args:
             card_data: Dictionary with 'name' and 'condition' keys from card_extractor.
 
         Returns:
-            List of dictionaries containing search results from SerpApi filtered by condition.
+            DataFrame containing search results from SerpApi filtered by condition.
         """
 
         search_term = f"{card_data['name']} {card_data['condition']}"
@@ -49,7 +50,7 @@ class EbaySearch:
             filtered_results = self._filter_and_rank(parsed_results, condition, search_term)
 
             logger.info(f"Filtered {len(parsed_results)} results to {len(filtered_results)} matching condition '{condition}'")
-            return filtered_results
+            return pd.DataFrame(filtered_results)
         except Exception as e:
             logger.error(f"eBay search failed for '{search_term}': {str(e)}")
             raise
