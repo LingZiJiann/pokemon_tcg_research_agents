@@ -73,3 +73,74 @@ uv run main.py
 - `google-search-results` — SerpAPI client
 - `rapidfuzz` — fuzzy string matching for relevance ranking
 - `python-dotenv` — load `.env`
+
+---
+
+## Roadmap
+
+### Phase 2 — Orchestrated Multi-Agent Pipeline
+
+Expand the current single-agent flow into a parallel multi-agent architecture. Each agent is a specialist; an orchestrator coordinates them and a synthesis agent produces the final output.
+
+**Target architecture:**
+
+```
+User Input
+    │
+    ▼
+extract_card_name
+    │
+    ▼
+search_ebay_last_sold
+    │
+    ├──────────────────────────┐
+    ▼                          ▼
+[context_agent]          [eda_agent]
+Google search for        EDA on eBay DataFrame
+card meta, set info,     (price stats, outliers,
+recent trends            condition breakdown)
+    │                          │
+    └──────────────┬───────────┘
+                   ▼
+          [synthesis_agent]
+          Combines context + EDA, produces
+          buy/sell/hold recommendation
+                   │
+                   ▼
+          [critique_agent]
+          Flags low confidence, sparse data,
+          or requests re-search if needed
+```
+
+**Agents to build:**
+
+| Agent | File | Responsibility |
+|---|---|---|
+| `context_agent` | `src/agents/context_agent.py` | Google search for card set info, recent hype, population reports |
+| `eda_agent` | `src/agents/eda_agent.py` | Statistical analysis of eBay DataFrame (mean, median, outliers, trend) |
+| `synthesis_agent` | `src/agents/synthesis_agent.py` | Combines both agent outputs into a recommendation |
+| `critique_agent` | `src/agents/critique_agent.py` | Validates synthesis output; flags uncertainty or requests more data |
+| `orchestrator` | `src/orchestrator.py` | Coordinates all agents; manages parallel execution and handoffs |
+
+**Why this pattern:**
+This is an *orchestrated multi-agent pipeline* — parallel specialist agents feeding a single aggregator — not a fully autonomous agent network. That's intentional: the problem doesn't require agents to negotiate or spawn sub-agents dynamically. The complexity budget is kept low while still demonstrating real multi-agent coordination.
+
+**New dependencies to add:**
+- `pandas` / `scipy` — EDA in `eda_agent`
+- `asyncio` — parallel agent execution
+
+---
+
+### Phase 3 — Quality & Robustness
+
+- Add a confidence score to the synthesis output (e.g. "low confidence — only 3 sold listings found")
+- `critique_agent` sends back to `context_agent` or `eda_agent` if data is insufficient (adds a feedback loop, making the system more genuinely multi-agent)
+- Persist results to a local SQLite cache to avoid redundant SerpAPI calls
+- Unit tests for `card_extractor` and `ebay_search` edge cases
+
+---
+
+### Phase 4 — Interface
+
+- Wrap CLI in a simple web UI (FastAPI + minimal frontend) so non-technical users can query cards without a terminal
+- Export recommendations as a formatted PDF or CSV report
