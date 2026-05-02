@@ -24,10 +24,11 @@ class EbaySearch:
             card_data: Dictionary with 'name' and 'condition' keys from card_extractor.
 
         Returns:
-            List of dictionaries containing search results from SerpApi.
+            List of dictionaries containing search results from SerpApi filtered by condition.
         """
 
         search_term = f"{card_data['name']} {card_data['condition']}"
+        condition = card_data['condition']
 
         params = {
             "engine": "ebay",
@@ -41,7 +42,12 @@ class EbaySearch:
             results = client.search(params)
             results = results.get("organic_results", [])
             logger.info(f"eBay search completed for: {search_term}")
-            return [self._parse_listing(result) for result in results]
+
+            parsed_results = [self._parse_listing(result) for result in results]
+            filtered_results = [r for r in parsed_results if self._title_contains_condition(r["title"], condition)]
+
+            logger.info(f"Filtered {len(parsed_results)} results to {len(filtered_results)} matching condition '{condition}'")
+            return filtered_results
         except Exception as e:
             logger.error(f"eBay search failed for '{search_term}': {str(e)}")
             raise
@@ -61,4 +67,18 @@ class EbaySearch:
             "price": result.get("price", {}).get("extracted"),
             "sold_date": result.get("sold_date"),
         }
+
+    def _title_contains_condition(self, title: str, condition: str) -> bool:
+        """Check if title contains the specified card condition.
+
+        Args:
+            title: The listing title to check.
+            condition: The card condition to look for (e.g., 'NM', 'LP', 'MP', 'HP', 'DMG').
+
+        Returns:
+            True if the title contains the condition, False otherwise.
+        """
+        if not title:
+            return False
+        return condition.lower() in title.lower()
     
