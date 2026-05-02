@@ -4,62 +4,56 @@ from src.utils.logger import get_logger
 
 logger = get_logger("card_extraction")
 
+_GRADED_PATTERN = re.compile(
+    r"\b(PSA|BGS|CGC)\s*(\d+(?:\.\d+)?)\b", re.IGNORECASE
+)
+
+_UNGRADED_CONDITIONS = [
+    (re.compile(r"\bNM-MT\b", re.IGNORECASE), "NM-MT"),
+    (re.compile(r"\bNear Mint\b", re.IGNORECASE), "NM"),
+    (re.compile(r"\bLightly Played\b", re.IGNORECASE), "LP"),
+    (re.compile(r"\bMP\b", re.IGNORECASE), "MP"),
+    (re.compile(r"\bHP\b", re.IGNORECASE), "HP"),
+    (re.compile(r"\bDMG\b", re.IGNORECASE), "DMG"),
+    (re.compile(r"\bNM\b", re.IGNORECASE), "NM"),
+    (re.compile(r"\bLP\b", re.IGNORECASE), "LP"),
+]
+
+_CLEANUP_PATTERN = re.compile(
+    r"\b(PSA|BGS|CGC)\s*\d+(?:\.\d+)?\b|\bNM-MT\b|\bNear Mint\b|\bLightly Played\b|\bMP\b|\bHP\b|\bDMG\b|\bNM\b|\bLP\b",
+    re.IGNORECASE
+)
+
 
 def extract_card_name(raw_input: str) -> dict:
     """Extract card name and condition from raw user input.
 
-    Parses a string containing a card name and optional condition information,
-    normalizing the card name and extracting the grading or condition status.
+    Returns a dict with "name" (normalized) and "condition" (graded or ungraded,
+    defaults to "Raw" if not detected).
 
-    Args:
-        raw_input: String containing the card name and optional condition
-            (e.g., "Charizard PSA 10", "Blastoise NM-MT", "Venusaur").
-
-    Returns:
-        A dictionary with the following keys:
-            name (str): Normalized card name with title case and stripped whitespace.
-            condition (str): Card condition, either a grading (e.g., "PSA 10", "BGS 9.5")
-                or an ungraded condition (e.g., "NM", "LP", "HP", "DMG"). Defaults to "Raw".
+    Examples:
+        "Charizard PSA 10" → {"name": "Charizard", "condition": "PSA 10"}
+        "Blastoise NM-MT" → {"name": "Blastoise", "condition": "NM-MT"}
+        "Venusaur" → {"name": "Venusaur", "condition": "Raw"}
     """
-    # Detect condition patterns
     condition = "Raw"
 
-    # Graded conditions: PSA 10, BGS 9.5, CGC 8, etc.
-    graded_match = re.search(
-        r"\b(PSA|BGS|CGC)\s*(\d+(?:\.\d+)?)\b", raw_input, re.IGNORECASE
-    )
+    # Check for graded condition (PSA, BGS, CGC with numeric grade)
+    graded_match = _GRADED_PATTERN.search(raw_input)
     if graded_match:
         condition = f"{graded_match.group(1).upper()} {graded_match.group(2)}"
         logger.debug(f"Detected graded condition: {condition}")
-
-    # Ungraded condition keywords
-    ungraded_keywords = {
-        r"\bNM-MT\b": "NM-MT",
-        r"\bNear Mint\b": "NM",
-        r"\bLightly Played\b": "LP",
-        r"\bMP\b": "MP",
-        r"\bHP\b": "HP",
-        r"\bDMG\b": "DMG",
-        r"\bNM\b": "NM",
-        r"\bLP\b": "LP",
-    }
-
-    if not graded_match:
-        for pattern, label in ungraded_keywords.items():
-            if re.search(pattern, raw_input, re.IGNORECASE):
+    else:
+        # Check for ungraded conditions only if no grading found
+        for pattern, label in _UNGRADED_CONDITIONS:
+            if pattern.search(raw_input):
                 condition = label
                 logger.debug(f"Detected ungraded condition: {condition}")
                 break
 
-    # Strip condition from input to get the card name
-    name = raw_input
-    name = re.sub(r"\b(PSA|BGS|CGC)\s*\d+(?:\.\d+)?\b", "", name, flags=re.IGNORECASE)
-    for pattern in ungraded_keywords.keys():
-        name = re.sub(pattern, "", name, flags=re.IGNORECASE)
-
-    # Normalize: strip, title case, clean whitespace
-    name = name.strip()
-    name = " ".join(name.split())  # Collapse multiple spaces
+    # Remove condition markers and normalize whitespace/case
+    name = _CLEANUP_PATTERN.sub("", raw_input).strip()
+    name = " ".join(name.split())
     name = name.title()
 
     result = {"name": name, "condition": condition}
