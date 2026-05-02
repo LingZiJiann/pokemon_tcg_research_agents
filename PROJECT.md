@@ -38,7 +38,7 @@ docs/
 | Tool | Description |
 |---|---|
 | `extract_card_name` | Normalizes user input into a clean search string (e.g. "Charizard 199/165 Obsidian Flames") |
-| `search_ebay_last_sold` | Queries SerpAPI eBay sold listings, returns top results with price and date |
+| `search_ebay_last_sold` | Queries SerpAPI eBay sold listings; filters results by condition match and fuzzy card name match (threshold 0.4), returns results with title, price, and date |
 
 ## Setup
 

@@ -14,6 +14,8 @@ The eBay search feature queries recent sold auction listings on eBay via the Ser
 class EbaySearch:
     def search(self, card_data: dict) -> list[dict]: ...
     def _parse_listing(self, result: dict) -> dict: ...
+    def _title_matches_card_name(self, title: str, card_name: str) -> bool: ...
+    def _title_contains_condition(self, title: str, condition: str) -> bool: ...
 ```
 
 ### `search()`
@@ -36,6 +38,7 @@ def search(self, card_data: dict) -> list[dict]:
 [
     {
         "url": str,         # eBay listing URL
+        "title": str,       # Listing title as shown on eBay
         "price": float,     # Extracted sale price (USD)
         "sold_date": str    # Date the listing sold
     },
@@ -45,7 +48,17 @@ def search(self, card_data: dict) -> list[dict]:
 
 ### `_parse_listing()`
 
-Internal helper that extracts `url`, `price`, and `sold_date` from a raw SerpAPI organic result dict.
+Internal helper that extracts `url`, `title`, `price`, and `sold_date` from a raw SerpAPI organic result dict.
+
+### `_title_contains_condition()`
+
+Checks whether a listing title contains the card condition string (case-insensitive substring match). For example, a title must contain `"NM"` when searching for near-mint cards.
+
+### `_title_matches_card_name()`
+
+Fuzzy-matches the card name against the listing title using `difflib.SequenceMatcher`. The similarity ratio must meet `fuzzy_threshold` (default `0.4`) for the listing to pass. This filters out listings that returned via keyword search but don't actually match the card.
+
+Both `_title_contains_condition` and `_title_matches_card_name` must return `True` for a result to be included.
 
 ## Search Parameters
 
@@ -136,6 +149,19 @@ Only `organic_results` are used from the SerpAPI response. Each result is parsed
 - `sold_date` → `sold_date`
 
 Fields missing from a result default to `None`.
+
+### Result Filtering
+
+After parsing, results are filtered by two checks applied in sequence:
+
+1. **Condition match** — `_title_contains_condition`: the title must contain the condition string (e.g. `"NM"`) as a case-insensitive substring.
+2. **Card name fuzzy match** — `_title_matches_card_name`: `difflib.SequenceMatcher` computes a similarity ratio between the card name and the title. Only results at or above `fuzzy_threshold` (default `0.4`) are kept.
+
+The threshold can be tuned at construction time:
+```python
+ebay = EbaySearch(fuzzy_threshold=0.6)  # stricter
+ebay = EbaySearch(fuzzy_threshold=0.3)  # more lenient
+```
 
 ### Error Handling
 
