@@ -70,7 +70,7 @@ class EbaySearch:
         """
         return {
             "url": result.get("link"),
-            "title": result.get("title"),
+            "title": result.get("title", "").lower(),
             "price": result.get("price", {}).get("extracted"),
             "sold_date": result.get("sold_date"),
         }

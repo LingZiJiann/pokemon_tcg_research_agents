@@ -18,30 +18,30 @@ def extract_card_name(raw_input: str) -> dict:
 **Return Type:**
 ```python
 {
-    "name": str,        # Normalized card name (e.g., "Charizard 199/165 Obsidian Flames")
-    "condition": str    # Card condition (e.g., "PSA 10", "NM", "Raw")
+    "name": str,        # Normalized card name (e.g., "charizard 199/165 obsidian flames")
+    "condition": str    # Card condition (e.g., "psa 10", "nm", "raw")
 }
 ```
 
 ## Supported Conditions
 
 ### Graded Conditions
-- **PSA**: `PSA 10`, `PSA 9`, `PSA 8.5`, etc.
-- **BGS**: `BGS 9.5`, `BGS 9`, etc.
-- **CGC**: `CGC 10`, `CGC 8`, etc.
+- **psa**: `psa 10`, `psa 9`, `psa 8.5`, etc.
+- **bgs**: `bgs 9.5`, `bgs 9`, etc.
+- **cgc**: `cgc 10`, `cgc 8`, etc.
 
-Format: `{Grade} {Score}`
+Format: `{grade} {score}` (lowercase)
 
 ### Ungraded Conditions
-- `NM-MT` (Near Mint-Mint)
-- `NM` (Near Mint)
-- `LP` (Lightly Played)
-- `MP` (Moderately Played)
-- `HP` (Heavily Played)
-- `DMG` (Damaged)
+- `nm-mt` (Near Mint-Mint)
+- `nm` (Near Mint)
+- `lp` (Lightly Played)
+- `mp` (Moderately Played)
+- `hp` (Heavily Played)
+- `dmg` (Damaged)
 
 ### Default
-If no condition is detected, defaults to `"Raw"` (ungraded).
+If no condition is detected, defaults to `"raw"` (ungraded).
 
 ## Usage Examples
 
@@ -49,8 +49,8 @@ If no condition is detected, defaults to `"Raw"` (ungraded).
 ```
 Input:  "psa 10 charizard 199/165 obsidian flames"
 Output: {
-    "name": "Charizard 199/165 Obsidian Flames",
-    "condition": "PSA 10"
+    "name": "charizard 199/165 obsidian flames",
+    "condition": "psa 10"
 }
 ```
 
@@ -58,8 +58,8 @@ Output: {
 ```
 Input:  "NM blastoise base set"
 Output: {
-    "name": "Blastoise Base Set",
-    "condition": "NM"
+    "name": "blastoise base set",
+    "condition": "nm"
 }
 ```
 
@@ -67,8 +67,8 @@ Output: {
 ```
 Input:  "charizard unlimited"
 Output: {
-    "name": "Charizard Unlimited",
-    "condition": "Raw"
+    "name": "charizard unlimited",
+    "condition": "raw"
 }
 ```
 
@@ -96,7 +96,7 @@ print(f"Condition: {extraction['condition']}")
 2. **Name Normalization**:
    - Removes detected condition tokens from input
    - Strips whitespace and collapses multiple spaces
-   - Title-cases the result (e.g., "charizard" → "Charizard")
+   - Converts to lowercase for consistency (e.g., "Charizard" → "charizard")
 
 ### Edge Cases Handled
 
