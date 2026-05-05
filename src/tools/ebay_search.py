@@ -1,17 +1,17 @@
 import os
 
+import pandas as pd
+import serpapi
 from dotenv import load_dotenv
 from rapidfuzz import fuzz
-import serpapi
-import pandas as pd
 
 from src.utils.logger import get_logger
 
 load_dotenv()
 logger = get_logger("ebay_search")
 
+
 class EbaySearch:
-    
     SHOW_ONLY = "Sold"
     BUYING_FORMAT = "Auction"
 
@@ -31,7 +31,7 @@ class EbaySearch:
         """
 
         search_term = f"{card_data['name']} {card_data['condition']}"
-        condition = card_data['condition']
+        condition = card_data["condition"]
 
         params = {
             "engine": "ebay",
@@ -47,9 +47,13 @@ class EbaySearch:
             logger.info(f"eBay search completed for: {search_term}")
 
             parsed_results = [self._parse_listing(result) for result in results]
-            filtered_results = self._filter_and_rank(parsed_results, condition, search_term)
+            filtered_results = self._filter_and_rank(
+                parsed_results, condition, search_term
+            )
 
-            logger.info(f"Filtered {len(parsed_results)} results to {len(filtered_results)} matching condition '{condition}'")
+            logger.info(
+                f"Filtered {len(parsed_results)} results to {len(filtered_results)} matching condition '{condition}'"
+            )
             return pd.DataFrame(filtered_results)
         except Exception as e:
             logger.error(f"eBay search failed for '{search_term}': {str(e)}")
@@ -71,7 +75,9 @@ class EbaySearch:
             "sold_date": result.get("sold_date"),
         }
 
-    def _filter_and_rank(self, results: list[dict], condition: str, search_term: str) -> list[dict]:
+    def _filter_and_rank(
+        self, results: list[dict], condition: str, search_term: str
+    ) -> list[dict]:
         filtered = [
             {**r, "score": fuzz.token_set_ratio(search_term, r["title"] or "")}
             for r in results
@@ -92,4 +98,3 @@ class EbaySearch:
         if not title:
             return False
         return condition.lower() in title.lower()
-    
