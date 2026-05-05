@@ -1,4 +1,5 @@
 import os
+import re
 
 import pandas as pd
 import serpapi
@@ -70,7 +71,7 @@ class EbaySearch:
         """
         return {
             "url": result.get("link"),
-            "title": result.get("title", "").lower(),
+            "title": re.sub(r"'s|[^a-z0-9\s]", "", result.get("title", "").lower()),
             "price": result.get("price", {}).get("extracted"),
             "sold_date": result.get("sold_date"),
         }
