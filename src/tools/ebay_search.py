@@ -79,12 +79,13 @@ class EbaySearch:
     def _filter_and_rank(
         self, results: list[dict], condition: str, search_term: str
     ) -> list[dict]:
-        filtered = [
-            {**r, "score": fuzz.token_set_ratio(search_term, r["title"] or "")}
-            for r in results
-            if self._title_contains_condition(r["title"], condition)
-        ]
-        return sorted(filtered, key=lambda r: r["score"], reverse=True)
+        ranked = []
+        for r in results:
+            if self._title_contains_condition(r["title"], condition):
+                score = fuzz.token_set_ratio(search_term, r["title"] or "")
+                r["score"] = score
+                ranked.append(r)
+        return ranked
 
     def _title_contains_condition(self, title: str, condition: str) -> bool:
         """Check if title contains the specified card condition.
