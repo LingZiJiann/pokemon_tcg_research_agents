@@ -15,6 +15,14 @@ class EbaySearch:
     BUYING_FORMAT = "Auction"
 
     def __init__(self, api_key: str | None = None):
+        """Initialize EbaySearch with a SerpAPI key.
+
+        Args:
+            api_key: SerpAPI key. Falls back to SERPAPI_API_KEY from settings if not provided.
+
+        Raises:
+            ValueError: If no API key is provided or found in settings.
+        """
         self.api_key = api_key or settings.serpapi_api_key
         if not self.api_key:
             raise ValueError("SERPAPI_API_KEY not provided and not in environment")
@@ -77,6 +85,17 @@ class EbaySearch:
     def _filter_and_rank(
         self, results: list[dict], condition: str, search_term: str
     ) -> list[dict]:
+        """Filter results by condition match and fuzzy score, then return ranked list.
+
+        Args:
+            results: Parsed listing dicts from _parse_listing.
+            condition: Card condition string to match in listing titles.
+            search_term: Original search query used to score title relevance.
+
+        Returns:
+            Listings that contain the condition and meet the minimum fuzzy score threshold,
+            each annotated with a 'score' key.
+        """
         filtered = []
         for result in results:
             if self._title_contains_condition(result["title"], condition):
