@@ -6,6 +6,7 @@ import serpapi
 from dotenv import load_dotenv
 from rapidfuzz import fuzz
 
+from config.ebay_search_config import MIN_SCORE
 from src.utils.logger import get_logger
 
 load_dotenv()
@@ -84,7 +85,8 @@ class EbaySearch:
             if self._title_contains_condition(result["title"], condition):
                 score = fuzz.token_set_ratio(search_term, result["title"] or "")
                 result["score"] = score
-                filtered.append(result)
+                if score >= MIN_SCORE:
+                    filtered.append(result)
         return filtered
 
     def _title_contains_condition(self, title: str, condition: str) -> bool:

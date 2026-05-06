@@ -51,7 +51,7 @@ Internal helper that extracts `url`, `title`, `price`, and `sold_date` from a ra
 
 ### `_filter_and_rank()`
 
-Filters parsed results to those whose title contains the condition string, scores each against the search term using `rapidfuzz.fuzz.token_set_ratio`, and returns them sorted by score descending.
+Filters parsed results to those whose title contains the condition string, scores each against the search term using `rapidfuzz.fuzz.token_set_ratio`, and returns only results with a score greater than or equal to the configured `MIN_SCORE`. Results are sorted by score descending.
 
 ### `_title_contains_condition()`
 
@@ -67,6 +67,16 @@ The following SerpAPI parameters are fixed per search:
 | `show_only`     | `"Sold"` | Filters to sold listings only        |
 | `buying_format` | `"Auction"` | Filters to auction-style sales    |
 | `_nkw`          | dynamic  | Keyword query: `"{name} {condition}"` |
+
+## Configuration
+
+Configuration settings for the eBay search tool are stored in `config/ebay_search_config.py`:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `MIN_SCORE` | `100` | Minimum fuzzy match score (0–100) required for results to be included. Only results with a score ≥ `MIN_SCORE` are returned. |
+
+To adjust the minimum score threshold, modify the `MIN_SCORE` value in `config/ebay_search_config.py`.
 
 ## Usage Examples
 
@@ -148,12 +158,13 @@ Fields missing from a result default to `None`.
 
 ### Result Filtering and Ranking
 
-After parsing, `_filter_and_rank` handles three steps in one pass:
+After parsing, `_filter_and_rank` handles four steps in one pass:
 1. Filters to results whose title contains the condition string (case-insensitive) via `_title_contains_condition`
 2. Scores each title against the search term using `rapidfuzz.fuzz.token_set_ratio` (0–100)
-3. Sorts results by score descending so the most relevant listings appear first
+3. Only includes results where `score >= MIN_SCORE` (configured in `config/ebay_search_config.py`)
+4. Returns results sorted by score descending so the most relevant listings appear first
 
-`token_set_ratio` is used because eBay titles contain extra words (set numbers, grades, seller tags) that would penalise simpler scorers.
+`token_set_ratio` is used because eBay titles contain extra words (set numbers, grades, seller tags) that would penalise simpler scorers. The `MIN_SCORE` threshold ensures only sufficiently relevant matches are returned.
 
 ### Error Handling
 
