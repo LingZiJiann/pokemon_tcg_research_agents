@@ -18,12 +18,15 @@ uv run main.py
 
 ```
 main.py                        # CLI entry point
+config/
+  config.py                    # Unified pydantic Settings (API keys, thresholds, regex patterns)
 src/
   agents/
     research_agent.py          # Claude agent with tool use
   tools/
     card_extractor.py          # Normalizes messy card input
     ebay_search.py             # SerpAPI eBay sold listings lookup
+    research_tools.py          # Tavily web search tool
   utils/
     logger.py                  # Logging utility
 docs/
@@ -59,6 +62,10 @@ Copy `.env.example` to `.env` and fill in your keys:
 ```
 ANTHROPIC_API_KEY=your_key_here
 SERPAPI_API_KEY=your_key_here
+TAVILY_API_KEY=your_key_here
+
+# Optional overrides (pydantic Settings)
+MIN_EBAY_SCORE=100             # Minimum fuzzy match score for eBay results (default 100)
 ```
 
 ### Run
@@ -70,9 +77,11 @@ uv run main.py
 ## Dependencies
 
 - `anthropic` — Claude SDK (tool use)
-- `google-search-results` — SerpAPI client
+- `serpapi` / `google-search-results` — SerpAPI client
+- `tavily-python` — Tavily web search client
 - `rapidfuzz` — fuzzy string matching for relevance ranking
-- `python-dotenv` — load `.env`
+- `pydantic-settings` — unified config via `.env` and environment variables
+- `pandas` — DataFrame for eBay results
 
 ---
 
