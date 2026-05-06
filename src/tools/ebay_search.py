@@ -1,15 +1,12 @@
-import os
 import re
 
 import pandas as pd
 import serpapi
-from dotenv import load_dotenv
 from rapidfuzz import fuzz
 
-from config.ebay_search_config import MIN_SCORE
+from config.config import settings
 from src.utils.logger import get_logger
 
-load_dotenv()
 logger = get_logger("ebay_search")
 
 
@@ -18,7 +15,7 @@ class EbaySearch:
     BUYING_FORMAT = "Auction"
 
     def __init__(self, api_key: str | None = None):
-        self.api_key = api_key or os.getenv("SERPAPI_API_KEY")
+        self.api_key = api_key or settings.serpapi_api_key
         if not self.api_key:
             raise ValueError("SERPAPI_API_KEY not provided and not in environment")
 
@@ -85,7 +82,7 @@ class EbaySearch:
             if self._title_contains_condition(result["title"], condition):
                 score = fuzz.token_set_ratio(search_term, result["title"] or "")
                 result["score"] = score
-                if score >= MIN_SCORE:
+                if score >= settings.min_ebay_score:
                     filtered.append(result)
         return filtered
 

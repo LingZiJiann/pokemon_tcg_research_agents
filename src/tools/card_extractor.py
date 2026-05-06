@@ -1,8 +1,8 @@
-from config.card_extraction_config import (
-    CLEANUP_PATTERN,
-    GRADED_PATTERN,
-    UNGRADED_CONDITIONS,
-)
+from config.config import settings
+
+GRADED_PATTERN = settings.GRADED_PATTERN
+UNGRADED_CONDITIONS = settings.UNGRADED_CONDITIONS
+CLEANUP_PATTERN = settings.CLEANUP_PATTERN
 from src.utils.logger import get_logger
 
 logger = get_logger("card_extraction")
