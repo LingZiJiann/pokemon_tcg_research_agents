@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     # API keys
     serpapi_api_key: str = ""
     tavily_api_key: str = ""
+    anthropic_api_key: str = ""
+
+    # Anthropic model
+    anthropic_model: str = "claude-haiku-4-5-20251001"
 
     # eBay search
     min_ebay_score: int = 100
