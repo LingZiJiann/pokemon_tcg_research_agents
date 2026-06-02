@@ -1,6 +1,6 @@
 import asyncio
 
-from src.orchestrator import Orchestrator
+from src.agents.orchestrator import Orchestrator
 
 
 def main():
