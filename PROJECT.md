@@ -1,28 +1,31 @@
 # Pokemon Card Research Agents
 
-A CLI AI agent that takes a Pokemon card query, normalizes it, and returns recent eBay sold prices — powered by Claude (Anthropic SDK) with tool use.
+A CLI multi-agent pipeline that takes a Pokemon card query, fetches recent eBay sold prices, and produces an AI-powered pricing analysis — built on Claude (Anthropic SDK) with an async pipeline.
 
 ## Overview
 
 ```
 uv run main.py
 → "What card are you searching for?"
-→ User types: "charizard 199/165 obsidian flames"
-→ Agent runs two tools in sequence:
-    1. extract_card_name        → "Charizard 199/165 Obsidian Flames"
-    2. search_ebay_last_sold    → recent sold listings from SerpAPI
-→ Agent formats and prints results
+→ User types: "charizard psa 10"
+→ Pipeline runs:
+    1. extract_card_name        → {"name": "charizard", "condition": "psa 10"}
+    2. EbaySearch.search()      → DataFrame of recent sold listings
+    3. EdaAgent.run()           → Claude pricing interpretation
+→ Prints EDA summary
 ```
 
 ## Project Structure
 
 ```
-main.py                        # CLI entry point
+main.py                        # CLI entry point — delegates to Pipeline
 config/
-  config.py                    # Unified pydantic Settings (API keys, thresholds, regex patterns)
+  config.py                    # Unified pydantic Settings (API keys, model, thresholds, regex)
 src/
+  pipeline.py                  # Async pipeline coordinator
   agents/
-    research_agent.py          # Claude agent with tool use
+    eda_agent.py               # Computes price stats + calls Claude for interpretation
+    research_agent.py          # (legacy) Claude agent with tool use
   tools/
     card_extractor.py          # Normalizes messy card input
     ebay_search.py             # SerpAPI eBay sold listings lookup
@@ -32,16 +35,16 @@ src/
 docs/
   card_extraction.md           # Card extraction feature documentation
   ebay_search.md               # eBay search feature documentation
+  eda_agent.md                 # EDA agent feature documentation
 ```
 
-**Future-proofing:** When an orchestrator is needed, it slots in as `src/orchestrator.py` and treats each file in `src/agents/` as a delegatable subagent — no restructuring required.
+## Tools & Agents
 
-## Tools
-
-| Tool | Description |
-|---|---|
-| `extract_card_name` | Normalizes user input into a clean search string (e.g. "Charizard 199/165 Obsidian Flames") |
-| `search_ebay_last_sold` | Queries SerpAPI eBay sold listings; filters by condition match, scores titles with `rapidfuzz` for relevance, returns results as a pandas DataFrame sorted by score with columns: url, title, price, sold_date, score |
+| Component | Type | Description |
+|---|---|---|
+| `extract_card_name` | Plain Python | Normalizes user input into name + condition dict |
+| `EbaySearch.search()` | Plain Python | Queries SerpAPI eBay sold listings; filters by condition and fuzzy score |
+| `EdaAgent` | Claude agent | Computes price stats (mean, median, IQR outliers, date range) then calls Claude for a buyer-facing interpretation |
 
 ## Setup
 
@@ -87,9 +90,17 @@ uv run main.py
 
 ## Roadmap
 
-### Phase 2 — Orchestrated Multi-Agent Pipeline
+### ~~Phase 1 — EDA Agent~~ ✓ Complete
 
-Expand the current single-agent flow into a parallel multi-agent architecture. Each agent is a specialist; an orchestrator coordinates them and a synthesis agent produces the final output.
+- `EdaAgent` computes price stats (count, mean, median, std, IQR outliers, date range) and calls Claude for a plain-language interpretation
+- `Pipeline` implementation wires: `extract_card_name → EbaySearch.search → EdaAgent.run → print`
+- `main.py` delegates entirely to `asyncio.run(Pipeline().run(...))`
+
+---
+
+### Phase 2 — Research Pipeline
+
+Spawn 3 concurrent Tavily search agents and consolidate results into a market overview, then run EDA and research in parallel.
 
 **Target architecture:**
 
@@ -97,59 +108,58 @@ Expand the current single-agent flow into a parallel multi-agent architecture. E
 User Input
     │
     ▼
-extract_card_name
+extract_card_name → EbaySearch.search
     │
-    ▼
-search_ebay_last_sold
-    │
-    ├──────────────────────────┐
-    ▼                          ▼
-[context_agent]          [eda_agent]
-Google search for        EDA on eBay DataFrame
-card meta, set info,     (price stats, outliers,
-recent trends            condition breakdown)
-    │                          │
-    └──────────────┬───────────┘
+    ├────────────────────────────────────┐
+    ▼                                    ▼
+EdaAgent.run()                  _research_pipeline()
+                                  ├─ SearchAgent (investment)
+                                  ├─ SearchAgent (reddit)
+                                  └─ SearchAgent (pricecharting)
+                                        │
+                                  ConsolidationAgent.run()
+    │                                    │
+    └──────────────┬─────────────────────┘
                    ▼
-          [synthesis_agent]
-          Combines context + EDA, produces
-          buy/sell/hold recommendation
-                   │
-                   ▼
-          [critique_agent]
-          Flags low confidence, sparse data,
-          or requests re-search if needed
+          AnalystAgent.run()   ← Phase 3
 ```
 
 **Agents to build:**
 
 | Agent | File | Responsibility |
 |---|---|---|
-| `context_agent` | `src/agents/context_agent.py` | Google search for card set info, recent hype, population reports |
-| `eda_agent` | `src/agents/eda_agent.py` | Statistical analysis of eBay DataFrame (mean, median, outliers, trend) |
-| `synthesis_agent` | `src/agents/synthesis_agent.py` | Combines both agent outputs into a recommendation |
-| `critique_agent` | `src/agents/critique_agent.py` | Validates synthesis output; flags uncertainty or requests more data |
-| `orchestrator` | `src/orchestrator.py` | Coordinates all agents; manages parallel execution and handoffs |
-
-**Why this pattern:**
-This is an *orchestrated multi-agent pipeline* — parallel specialist agents feeding a single aggregator — not a fully autonomous agent network. That's intentional: the problem doesn't require agents to negotiate or spawn sub-agents dynamically. The complexity budget is kept low while still demonstrating real multi-agent coordination.
-
-**New dependencies to add:**
-- `pandas` / `scipy` — EDA in `eda_agent`
-- `asyncio` — parallel agent execution
+| `SearchAgent` | `src/agents/search_agent.py` | Calls Tavily directly — no Claude, pure tool invocation |
+| `ConsolidationAgent` | `src/agents/consolidation_agent.py` | Single Claude call to merge 3 search results into a market overview |
 
 ---
 
-### Phase 3 — Quality & Robustness
+### Phase 3 — Analyst Agent & Final Output
 
-- Add a confidence score to the synthesis output (e.g. "low confidence — only 3 sold listings found")
-- `critique_agent` sends back to `context_agent` or `eda_agent` if data is insufficient (adds a feedback loop, making the system more genuinely multi-agent)
-- Persist results to a local SQLite cache to avoid redundant SerpAPI calls
-- Unit tests for `card_extractor` and `ebay_search` edge cases
+Combine EDA and research overview into a final buy/hold/sell recommendation and print all three sections with clear headers.
+
+**Agent to build:**
+
+| Agent | File | Responsibility |
+|---|---|---|
+| `AnalystAgent` | `src/agents/analyst_agent.py` | Single Claude call — produces buy/hold/sell recommendation from EDA + overview |
+
+**Final output format:**
+```
+=== EDA Summary ===
+...
+
+=== Market Overview ===
+...
+
+=== Analyst Recommendation ===
+...
+```
 
 ---
 
-### Phase 4 — Interface
+### Phase 4 — Quality & Interface
 
-- Wrap CLI in a simple web UI (FastAPI + minimal frontend) so non-technical users can query cards without a terminal
-- Export recommendations as a formatted PDF or CSV report
+- Confidence score on analyst output (e.g. "low confidence — only 3 sold listings")
+- SQLite cache to avoid redundant SerpAPI/Tavily calls
+- Wrap CLI in FastAPI + minimal frontend for non-technical users
+- Export recommendations as PDF or CSV
