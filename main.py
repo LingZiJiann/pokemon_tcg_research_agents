@@ -1,11 +1,9 @@
-from src.tools.card_extractor import extract_card_name
-from src.tools.ebay_search import EbaySearch
-from src.utils.logger import setup_logger
+import asyncio
+
+from src.orchestrator import Orchestrator
 
 
 def main():
-    logger = setup_logger("main", console_output=False)
-
     print("Pokemon Card Research Agent")
     print("=" * 40)
 
@@ -14,24 +12,7 @@ def main():
         print("No input provided. Exiting.")
         return
 
-    logger.info(f"User query: {user_input}")
-
-    extraction = extract_card_name(user_input)
-    print(f"\nExtracted Name: {extraction['name']}")
-    print(f"Condition: {extraction['condition']}")
-    print(f"\nSearching for: {extraction['name']} ({extraction['condition']})")
-
-    ebay_search = EbaySearch()
-    results = ebay_search.search(extraction)
-
-    print("\n" + "=" * 40)
-    print("Search Results:")
-    print("=" * 40)
-    if not results.empty:
-        print(results.to_string())
-    else:
-        print("No results found.")
-
+    asyncio.run(Orchestrator().run(user_input))
 
 
 if __name__ == "__main__":
