@@ -1,6 +1,6 @@
 import asyncio
 
-from src.agents.orchestrator import Orchestrator
+from src.pipeline import Pipeline
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
         print("No input provided. Exiting.")
         return
 
-    asyncio.run(Orchestrator().run(user_input))
+    asyncio.run(Pipeline().run(user_input))
 
 
 if __name__ == "__main__":
